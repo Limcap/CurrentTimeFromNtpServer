@@ -9,7 +9,9 @@ import util = require('util')
 
 
 export async function getNtpBrTime() {
+	// Os servidores NTP.BR fornecem a hora legal brasileira.
 	let ntpServers = [
+		"pool.ntp.br",
 		"a.ntp.br",
 		"b.ntp.br",
 		"c.ntp.br",
@@ -17,7 +19,9 @@ export async function getNtpBrTime() {
 		"b.st1.ntp.br",
 		"c.st1.ntp.br",
 		"d.st1.ntp.br",
-		"gps.ntp.br"
+		"gps.ntp.br",
+		// "ntp.cais.rnp.br",
+		// "time.windows.com",  // não é a hora legal brasileira
 	];
 
 	// Embaralha a lista de servidores, para não pegar sempre do mesmo.
@@ -61,7 +65,10 @@ function shuffle(items : Array<any> ) {
 async function getIpv4fromManyDns( manyDns : string[] ) {
 	for (let dns of manyDns) {
 		var ipv4 = await getIpv4fromDns(dns);
-		if (ipv4 != null) break;
+		if (ipv4 != null) {
+			console.log("Dns: "+dns);
+			break;
+		} 
 	}
 	return ipv4;
 }
@@ -89,7 +96,7 @@ async function sendBytesUDP(destIp:string, destPort:number, dataToSend:Uint8Arra
 	socket.on('listening', () => socket.send(dataToSend,destPort,destIp));
 	await new Promise((rs,rj)=>socket.bind(0,"0.0.0.0",()=>rs(true)));
 	var resp = await new Promise<Uint8Array>((rs,rj)=>{
-		socket.on('message',(msg:Buffer)=>rs(msg));
+		socket.on('message',(msg:Buffer,rinfo:dgram.RemoteInfo)=>rs(msg));
 	});
 	socket.close();
 	return resp;

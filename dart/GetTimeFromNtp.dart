@@ -5,7 +5,9 @@ import "dart:typed_data";
 
 
 Future<DateTime> getNtpBrTime() async {
+  // Os servidores NTP.BR fornecem a hora legal brasileira.
 	var ntpServers = [
+    "pool.ntp.br",
 		"a.ntp.br",
 		"b.ntp.br",
 		"c.ntp.br",
@@ -13,7 +15,9 @@ Future<DateTime> getNtpBrTime() async {
 		"b.st1.ntp.br",
 		"c.st1.ntp.br",
 		"d.st1.ntp.br",
-		"gps.ntp.br"
+		"gps.ntp.br",
+    // "ntp.cais.rnp.br", 
+    // "time.windows.com", // não é a hora legal brasileira
 	];
 
 	// Embaralha a lista de servidores, para não pegar sempre do mesmo.
