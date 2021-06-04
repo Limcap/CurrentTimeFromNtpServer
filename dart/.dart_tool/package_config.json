@@ -1,0 +1,14 @@
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "Dart_Get_Ntp.Br_Time",
+      "rootUri": "../",
+      "packageUri": "lib/",
+      "languageVersion": "2.10"
+    }
+  ],
+  "generated": "2021-06-02T18:53:35.017843Z",
+  "generator": "pub",
+  "generatorVersion": "2.13.1"
+}
