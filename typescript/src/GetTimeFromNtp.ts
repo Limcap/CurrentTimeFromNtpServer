@@ -25,26 +25,28 @@ export async function getNtpBrTime() : Promise<Date> {
 	];
 
 	// Embaralha a lista de servidores, para não pegar sempre do mesmo.
-	shuffle(ntpServers);
-	
+	shuffle(ntpServers);	
 
-	// Processa a lista servidores para obter o endereço IP.
-	// Em caso de falha tentará novamente por até 20 vezes.
-	for (let i = 0; i < 20; i++) {
-		var ipv4 = await getIpv4fromManyDns(ntpServers);
-		if (ipv4 == null) continue;
-		
-		// Prepara os bytes a serem enviado para o servidor:
-		// Tamanho da mensagem NTP - 16 bytes (RFC 2030)
-		var ntpData = Uint8Array.from(new Array(48).fill(0));
-		//Indicador de Leap (ver RFC), Versão e Modo
-		ntpData[0] = 0x1B; //LI = 0 (sem warnings), VN = 3 (IPv4 apenas), Mode = 3 (modo cliente);
-		
-		var bytes = await sendBytesUdp(ipv4, 123, ntpData);
-		if (bytes != null) break;
+	// Tenta todos os servidores em ordem, com um timout inicial de 1s. Caso nenhum
+	// servidor responda nesse tempo, o timeout dobra e as tentativas
+	// recomeçam até o timeout chegar a 10s ou até algum sevidor responder.
+	for (let timeoutms = 1000; timeoutms < 10000; timeoutms *= 2 ) {
+		for (let dns of ntpServers) {
+			var ipv4 = await getIpv4fromDns(dns);
+			if (ipv4 == null) continue;
+			console.log("Dns: "+dns);
+			
+			// Prepara os bytes a serem enviado para o servidor:
+			// Tamanho da mensagem NTP - 16 bytes (RFC 2030)
+			var ntpData = Uint8Array.from(new Array(48).fill(0));
+			//Indicador de Leap (ver RFC), Versão e Modo
+			ntpData[0] = 0x1B; //LI = 0 (sem warnings), VN = 3 (IPv4 apenas), Mode = 3 (modo cliente);
+			
+			var bytes = await sendBytesUdp(ipv4, 123, ntpData, timeoutms);
+			if (bytes != null) break;
+		}
+		return  convertBytesToDate(bytes);
 	}
-	
-	return  convertBytesToDate(bytes);
 }
 
 
@@ -92,16 +94,16 @@ async function getIpv4fromDns( dns: string ) : Promise<string> {
 
 
 
-async function sendBytesUdp(destIp:string, destPort:number, dataToSend:Uint8Array) : Promise<Uint8Array> {
+async function sendBytesUdp(destIp:string, destPort:number, dataToSend:Uint8Array, timeoutms:number) : Promise<Uint8Array> {
 	const socket = dgram.createSocket('udp4');
 	socket.on('listening', () => socket.send(dataToSend,destPort,destIp));
 	
 	let bind = new Promise((rs,rj)=>socket.bind(0,"0.0.0.0",()=>rs(true)));
-	let isBinded = await Promise.race([bind,timeout(2000,false)])
+	let isBinded = await Promise.race([bind,timeout(timeoutms,false)])
 	if (!isBinded) return null;
 
 	let request = new Promise<Uint8Array>((rs,rj)=>socket.on('message',(msg:Buffer)=>rs(msg)));
-	let response = await Promise.race<Promise<Uint8Array>>([request,timeout(5000,null)])
+	let response = await Promise.race<Promise<Uint8Array>>([request,timeout(timeoutms,null)])
 	socket.close();
 	return response;
 
