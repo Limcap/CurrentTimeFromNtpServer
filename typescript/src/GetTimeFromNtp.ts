@@ -8,7 +8,7 @@ import util = require('util')
 
 
 
-export async function getNtpBrTime() {
+export async function getNtpBrTime() : Promise<Date> {
 	// Os servidores NTP.BR fornecem a hora legal brasileira.
 	let ntpServers = [
 		"pool.ntp.br",
@@ -50,7 +50,7 @@ export async function getNtpBrTime() {
 
 
 
-function shuffle(items : Array<any> ) {
+function shuffle(items : Array<any> ) : void {
 	const random = (max : number) => Math.floor(Math.random()*max);
 	for (let i = items.length - 1; i > 0; i--) {
    	var n = random(i + 1);
@@ -58,7 +58,6 @@ function shuffle(items : Array<any> ) {
 		items[i] = items[n];
 		items[n] = temp;
 	}
-	return items;
 }
 
 
@@ -78,7 +77,7 @@ async function getIpv4fromManyDns( manyDns : string[] ) {
 
 
 
-async function getIpv4fromDns( dns: string ) {
+async function getIpv4fromDns( dns: string ) : Promise<string> {
 	let addresses = await new Promise<string[]>((resolve,reject) => {
 		dnsTools.resolve4(dns, (_err, arr:string[]) => resolve(arr) );
 	});
@@ -93,7 +92,7 @@ async function getIpv4fromDns( dns: string ) {
 
 
 
-async function sendBytesUdp(destIp:string, destPort:number, dataToSend:Uint8Array) {
+async function sendBytesUdp(destIp:string, destPort:number, dataToSend:Uint8Array) : Promise<Uint8Array> {
 	const socket = dgram.createSocket('udp4');
 	socket.on('listening', () => socket.send(dataToSend,destPort,destIp));
 	
